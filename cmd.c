@@ -94,7 +94,7 @@ int handle_theme(Command* c, Theme* t) {
     return 0;
   }
   
-  printf("%stheme not supported\n%s", t->begin, t->end);
+  printf("%sunsupported theme\n%s", t->begin, t->end);
   return 1;
 }
 

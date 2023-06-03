@@ -36,7 +36,7 @@ Command* parse(char* cmd_string) {
 
 void clear_buffer(char* b) {
   int i = 0;
-  while (i++ != 100) *b = 0;
+  while (i++ != COMMAND_MAX_TOKENS) *b = 0;
 }
 
 void print_vars(EnvVar* v) {
@@ -49,7 +49,13 @@ void print_vars(EnvVar* v) {
 }
 
 int main(int argc, char** argv) {
-  char cmd_buffer[100];
+  char* file_path = NULL;
+  int mode; /* 0 = interactive | 1 = read */
+
+  FILE* f;
+  char* file_buffer = NULL;
+  char* file_pos = NULL;
+  char cmd_buffer[COMMAND_MAX_TOKENS];
   EnvVar* var_list = NULL;
   
   Theme* theme = (Theme*) malloc(sizeof(Theme));
@@ -57,15 +63,59 @@ int main(int argc, char** argv) {
   theme->end = COLOR_NON;
 
   CommandLog* clog = create_log();
+
+  switch (argc) {
+  case 2:
+    mode = MODE_S;
+    file_path = argv[1];
+    break;
+    
+  case 1:
+    mode = MODE_I;
+    break;
+    
+  default:
+    exit(EXIT_FAILURE);
+  }
+
+  if (mode == MODE_S) {
+    f = fopen(file_path, "r");
+    
+    if (f == NULL) {
+      printf("file not good\n");
+      mode = MODE_I;
+      
+    } else {
+      fseek(f, 0, SEEK_END);
+      int fs = ftell(f);
+      fseek(f, 0, SEEK_SET);
+
+      file_buffer = (char*) calloc(fs + 1, sizeof(char));
+      fread(file_buffer, sizeof(char), fs, f);
+      file_pos = file_buffer;
+
+      printf("%s\n", file_buffer);
+    }
+
+    fclose(f);
+  }
   
   printf(PROMPT_PREFIX, COLOR_NON, COLOR_NON);
-  fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
-   
+
+  if (mode == MODE_S) {
+    char* f_tok = strtok(file_buffer, FILE_DELIMITER);
+    strcpy(cmd_buffer, f_tok);
+    putchar('\n');
+    
+  } else if (mode == MODE_I) {
+    fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
+  }
+  
   for (;;) {
     Command* parsed_cmd = parse(cmd_buffer);
     int status = 0;
-
     struct tm * t;
+       
     time_t cur_time;
     time(&cur_time);
     t = localtime(&cur_time);
@@ -102,7 +152,22 @@ int main(int argc, char** argv) {
     printf(PROMPT_PREFIX, theme->begin, theme->end);
 
     clear_buffer(cmd_buffer);
-    fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
+    
+    if (mode == MODE_S) {
+      while (*file_pos++ != 0);
+      char* f_tok = strtok(file_pos, FILE_DELIMITER);
+      
+      if (f_tok != NULL) {
+	strcpy(cmd_buffer, f_tok);
+	putchar('\n');
+      } else {
+	mode = MODE_I;
+      }
+    }
+
+    if (mode == MODE_I) {
+      fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
+    }
   }
 
   exit(EXIT_SUCCESS);

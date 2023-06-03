@@ -6,6 +6,7 @@
 typedef struct command {
   int token_count;
   int status;
+  char* cmd_raw;
   char* name;
   char** args;
   struct tm time;

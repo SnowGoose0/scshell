@@ -1,5 +1,5 @@
 $VAR=foo
-print hello
+print $VAR
 pwd
 whoami
 theme red

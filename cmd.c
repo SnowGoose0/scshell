@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "cmd.h"
+#include "clog.h"
 #include "types.h"
 
 #include <sys/types.h>
@@ -15,8 +16,22 @@ char* const MONTHS_MAP[] = {
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-void handle_exit(Theme* t) {
+void handle_exit(Theme* t, EnvVar* v, CommandLog* log, char* fb) {
   printf("%sBye!\n%s", t->begin, t->end);
+
+  free(t);
+  free_log(log);
+  
+  if (fb != NULL) free(fb);
+
+  while (v != NULL) {
+    EnvVar* tmp = v->next;
+    free(v->name);
+    free(v->value);
+    free(v);
+    v = tmp;
+  }
+  
   exit(EXIT_SUCCESS);
 }
 

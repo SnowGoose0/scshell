@@ -14,6 +14,7 @@ Command* parse(char* cmd_string) {
   strcpy(cmd, cmd_string);
   
   Command* c = (Command*) malloc(sizeof(Command));
+  c->cmd_raw = cmd;
   c->token_count = 0;
   c->status = -1;
   c->name = NULL;
@@ -39,14 +40,14 @@ void clear_buffer(char* b) {
   while (i++ != COMMAND_MAX_TOKENS) *b = 0;
 }
 
-void print_vars(EnvVar* v) {
+/* void print_vars(EnvVar* v) {
   while (v) {
     printf("[%s:%s] ", v->name, v->value);
     v = v->next;
   }
 
   printf("\n");
-}
+} */
 
 int main(int argc, char** argv) {
   char* file_path = NULL;
@@ -93,21 +94,17 @@ int main(int argc, char** argv) {
       file_buffer = (char*) calloc(fs + 1, sizeof(char));
       fread(file_buffer, sizeof(char), fs, f);
       file_pos = file_buffer;
-
-      printf("%s\n", file_buffer);
     }
 
     fclose(f);
   }
-  
-  printf(PROMPT_PREFIX, COLOR_NON, COLOR_NON);
 
   if (mode == MODE_S) {
     char* f_tok = strtok(file_buffer, FILE_DELIMITER);
     strcpy(cmd_buffer, f_tok);
-    putchar('\n');
     
   } else if (mode == MODE_I) {
+    printf(PROMPT_PREFIX, COLOR_NON, COLOR_NON);
     fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
   }
   
@@ -126,7 +123,10 @@ int main(int argc, char** argv) {
       char* cmd_name = parsed_cmd->name;
       
       if (!strcmp(cmd_name, "exit")) {
-	handle_exit(theme);
+	free(parsed_cmd->cmd_raw);
+	free(parsed_cmd->args);
+	free(parsed_cmd);
+	handle_exit(theme, var_list, clog, file_buffer);
 
       } else if (!strcmp(cmd_name, "log")) {
 	status = handle_log(parsed_cmd, clog, theme);
@@ -139,7 +139,6 @@ int main(int argc, char** argv) {
 
       } else if (*cmd_name == ENV_VAR_PREFIX) {
 	var_list = handle_env_var(parsed_cmd, var_list, theme);
-	print_vars(var_list);
 
       } else {
 	status = handle_external(parsed_cmd, theme);
@@ -149,8 +148,6 @@ int main(int argc, char** argv) {
     parsed_cmd->status = status;
     insert_log(clog, parsed_cmd);
 
-    printf(PROMPT_PREFIX, theme->begin, theme->end);
-
     clear_buffer(cmd_buffer);
     
     if (mode == MODE_S) {
@@ -159,14 +156,14 @@ int main(int argc, char** argv) {
       
       if (f_tok != NULL) {
 	strcpy(cmd_buffer, f_tok);
-	putchar('\n');
       } else {
 	mode = MODE_I;
       }
     }
 
     if (mode == MODE_I) {
-      fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
+      printf(PROMPT_PREFIX, theme->begin, theme->end);
+      fgets(cmd_buffer, sizeof(cmd_buffer), stdin);      
     }
   }
 

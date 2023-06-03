@@ -23,6 +23,12 @@ void insert_log(CommandLog* log, Command* c) {
 }
 
 void free_log(CommandLog* log) {
+  for (int i = 0; i < log->back; ++i) {
+    free(log->list[i]->args[0]);
+    free(log->list[i]->args);
+    free(log->list[i]);
+  }
+  
   free(log->list);
   free(log);
 }

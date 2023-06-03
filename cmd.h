@@ -4,7 +4,7 @@
 #include "types.h"
 #include "cshell.h"
 
-void handle_exit(Theme* t);
+void handle_exit(Theme* t, EnvVar* v, CommandLog* log, char* fb);
 
 int handle_log(Command* c, CommandLog* log, Theme* t);
 

@@ -56,14 +56,10 @@ int main(int argc, char** argv) {
   FILE* f;
   char* file_buffer = NULL;
   char* file_pos = NULL;
-  char cmd_buffer[COMMAND_MAX_TOKENS];
   EnvVar* var_list = NULL;
-  
-  Theme* theme = (Theme*) malloc(sizeof(Theme));
-  theme->begin = COLOR_NON;
-  theme->end = COLOR_NON;
-
-  CommandLog* clog = create_log();
+  Theme* theme;
+  CommandLog* clog;
+  char cmd_buffer[COMMAND_MAX_TOKENS];
 
   switch (argc) {
   case 2:
@@ -83,8 +79,9 @@ int main(int argc, char** argv) {
     f = fopen(file_path, "r");
     
     if (f == NULL) {
-      printf("file not good\n");
+      printf("Unable to read script file: %s\n", file_path);
       mode = MODE_I;
+      exit(EXIT_FAILURE);
       
     } else {
       fseek(f, 0, SEEK_END);
@@ -94,10 +91,16 @@ int main(int argc, char** argv) {
       file_buffer = (char*) calloc(fs + 1, sizeof(char));
       fread(file_buffer, sizeof(char), fs, f);
       file_pos = file_buffer;
+      fclose(f);
     }
 
-    fclose(f);
   }
+  
+  theme = (Theme*) malloc(sizeof(Theme));
+  theme->begin = COLOR_NON;
+  theme->end = COLOR_NON;
+
+  clog = create_log();
 
   if (mode == MODE_S) {
     char* f_tok = strtok(file_buffer, FILE_DELIMITER);

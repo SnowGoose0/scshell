@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra
 
 TARGET = cshell
-SRCS = cshell.c cmd.c
+SRCS = cshell.c cmd.c clog.c
 
 .PHONY: all clean
 

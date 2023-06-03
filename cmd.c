@@ -4,13 +4,44 @@
 #include <unistd.h>
 
 #include "cmd.h"
+#include "types.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
 
+char* const WEEKDAYS_MAP[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+char* const MONTHS_MAP[] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
 void handle_exit(Theme* t) {
   printf("%sBye!\n%s", t->begin, t->end);
   exit(EXIT_SUCCESS);
+}
+
+int handle_log(Command* c, CommandLog* log, Theme* t) {
+
+  if (c->token_count > 1) return 1;
+  
+  for (int i = 0; i < log->back; ++i) {
+    Command* c = log->list[i];
+    char* command_name = c->name;
+    int status = c->status;
+
+    char* wd = WEEKDAYS_MAP[c->time.tm_wday];
+    char* m = MONTHS_MAP[c->time.tm_mon];
+    int d = c->time.tm_mday;
+    int hr = c->time.tm_hour;
+    int mn = c->time.tm_min;
+    int s = c->time.tm_sec;
+    int yr = c->time.tm_year + 1900;
+
+    printf("%s%s %s %d %d:%d:%d %d%s\n", t->begin, wd, m, d, hr, mn, s, yr, t->end);
+    printf("  %s%s %d%s\n", t->begin, command_name, status, t->end);
+  }
+
+  return 0;
 }
 
 int handle_print(Command* c, EnvVar* v, Theme* t) {
@@ -67,10 +98,6 @@ int handle_theme(Command* c, Theme* t) {
   return 1;
 }
 
-int handle_log(Command* c, Theme* t) {
-  return 0;
-}
-
 EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   char* var = c->name;
   char* val = c->name;
@@ -118,7 +145,6 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
 }
 
 int handle_external(Command* c, Theme* t) {
-  int p_status;
   int c_status;
   char** exec_args;
   
@@ -137,10 +163,8 @@ int handle_external(Command* c, Theme* t) {
     exit(EXIT_SUCCESS);
     
   } else {
-    pid_t cid = wait(&p_status);
-
-    if (cid < 0) return -1;
+    wait(&c_status);    
   }
 
-  return c_status;
+  return c_status - 255 > 0 ? 1 : 0;
 }

@@ -1,0 +1,7 @@
+$VAR=foo
+print hello
+pwd
+whoami
+theme red
+log
+exit

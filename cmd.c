@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#define TMP_DEFAULT 10
+
 char* const WEEKDAYS_MAP[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 char* const MONTHS_MAP[] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -160,14 +162,18 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
 }
 
 int handle_external(Command* c, Theme* t) {
+  int pipef[2];
   int c_status;
   char** exec_args;
-  
+
+  if (pipe(pipef) == -1) return 1;
   pid_t pid = fork();
 
   exec_args = c->args;
   
   if (pid == 0) {
+    dup2(pipef[1], STDOUT_FILENO);
+    dup2(pipef[1], STDERR_FILENO);
     c_status = execvp(c->name, exec_args);
     
     if (c_status < 0) {
@@ -178,7 +184,31 @@ int handle_external(Command* c, Theme* t) {
     exit(EXIT_SUCCESS);
     
   } else {
-    wait(&c_status);    
+    wait(&c_status);
+    close(pipef[1]);
+
+    char tmp_buffer[TMP_DEFAULT];
+    char* read_buffer = (char*) malloc(sizeof(char) * TMP_DEFAULT);
+    int read_buffer_size = TMP_DEFAULT;
+    int total_bytes_read = 0;
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(pipef[0], tmp_buffer, TMP_DEFAULT - 1)) > 0) {
+      total_bytes_read += bytes_read;
+
+      if (total_bytes_read > read_buffer_size) {
+	read_buffer = (char*) realloc(read_buffer, read_buffer_size + TMP_DEFAULT);
+	read_buffer_size += TMP_DEFAULT;
+      }
+
+      memcpy(read_buffer + total_bytes_read - bytes_read, tmp_buffer, bytes_read);
+      read_buffer[total_bytes_read] = 0;
+    }
+
+    close(pipef[0]);
+    printf("%s%s%s", t->begin, read_buffer, t->end);
+
+    free(read_buffer);
   }
 
   return c_status - 255 > 0 ? 1 : 0;

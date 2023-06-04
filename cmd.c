@@ -61,13 +61,43 @@ int handle_log(Command* c, CommandLog* log, Theme* t) {
   return 0;
 }
 
+short check_env_var(char** c, EnvVar* v, Theme* t) {
+  char** toks = c;
+
+  while (*toks != 0) {
+    EnvVar* tmp_v = v;
+    
+    if ((*toks)[0] == '$') {
+      if (v == NULL) goto NOT_FOUND;
+      
+      while (tmp_v) {
+	if (!strcmp(*toks, tmp_v->name)) return 1;
+	tmp_v = tmp_v->next;
+      }
+
+      goto NOT_FOUND;
+    }
+    
+    toks++;
+  }
+
+  return 1;
+
+NOT_FOUND:
+  printf("%sError: No Environment Variable %s found.\n%s", t->begin, *toks, t->end);
+  return 0;
+}
+
 int handle_print(Command* c, EnvVar* v, Theme* t) {
+  short env_var_exist = 0;
   char** content = c->args + 1;
 
   if (*content == 0) {
     printf("%serror: not enough arguments\n%s", t->begin, t->end);
     return 1;
   }
+
+  if (!check_env_var(content, v, t)) return 1;
 
   while (*content != 0) {
     char* print_item = *content;
@@ -177,7 +207,7 @@ int handle_external(Command* c, Theme* t) {
     c_status = execvp(c->name, exec_args);
     
     if (c_status < 0) {
-      printf("%s%s: command not found\n%s", t->begin, c->name, t->end);
+      printf("%sMissing keyword or command, or permission problem\n%s", t->begin, t->end);
       exit(EXIT_FAILURE);
     }
     

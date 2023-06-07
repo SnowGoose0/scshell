@@ -55,7 +55,7 @@ int handle_log(Command* c, CommandLog* log, Theme* t) {
     int yr = c->time.tm_year + 1900;
 
     printf("%s%s %s %d %d:%d:%d %d%s\n", t->begin, wd, m, d, hr, mn, s, yr, t->end);
-    printf("  %s%s %d%s\n", t->begin, command_name, status, t->end);
+    printf(" %s%s %d%s\n", t->begin, command_name, status, t->end);
   }
 
   return 0;
@@ -67,7 +67,7 @@ short check_env_var(char** c, EnvVar* v, Theme* t) {
   while (*toks != 0) {
     EnvVar* tmp_v = v;
     
-    if ((*toks)[0] == '$') {
+    if ((*toks)[0] == '$' && strlen(*toks) > 1) {
       if (v == NULL) goto NOT_FOUND;
       
       while (tmp_v) {
@@ -102,13 +102,14 @@ int handle_print(Command* c, EnvVar* v, Theme* t) {
   while (*content != 0) {
     char* print_item = *content;
     EnvVar* tmp_v = v;
-    
+
+    /*
     if ((*content)[0] == '$') {
       while (tmp_v) {
 	if (!strcmp(*content, tmp_v->name)) print_item = tmp_v->value;
 	tmp_v = tmp_v->next;
       }
-    }
+      }*/
       
     printf("%s%s %s", t->begin, print_item, t->end);
     
@@ -152,7 +153,7 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   EnvVar* prev = NULL;
   
   if (!strstr(var, "=")) {
-    printf("%svariable value expected%s", t->begin, t->end);
+    printf("%sVariable value expected\n%s", t->begin, t->end);
     return NULL;
   }
 
@@ -227,7 +228,7 @@ int handle_external(Command* c, Theme* t) {
       total_bytes_read += bytes_read;
 
       if (total_bytes_read > read_buffer_size) {
-	read_buffer = (char*) realloc(read_buffer, read_buffer_size + TMP_DEFAULT);
+	read_buffer = (char*) realloc(read_buffer, total_bytes_read + TMP_DEFAULT);
 	read_buffer_size += TMP_DEFAULT;
       }
 

@@ -24,7 +24,11 @@ void insert_log(CommandLog* log, Command* c) {
 
 void free_log(CommandLog* log) {
   for (int i = 0; i < log->back; ++i) {
-    free(log->list[i]->args[0]);
+    for (int j = 0; j < log->list[i]->token_count; ++j) {
+      free(log->list[i]->args[j]);
+    }
+
+    free(log->list[i]->cmd_raw);
     free(log->list[i]->args);
     free(log->list[i]);
   }

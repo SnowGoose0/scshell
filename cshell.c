@@ -9,29 +9,62 @@
 #include "types.h"
 #include "cshell.h"
 
-Command* parse(char* cmd_string) {
+char* get_var(char* name, EnvVar* v) {
+  while (v) {
+    if (!strcmp(name, v->name)) {
+      return v->value;
+    }
+    v = v->next;
+  }
+
+  return NULL;
+}
+
+Command* parse(char* cmd_string, EnvVar* v) {
+  struct tm * t;
+       
+  time_t cur_time;
+  time(&cur_time);
+  t = localtime(&cur_time);
+  
   char* cmd = (char*) calloc(strlen(cmd_string) + 1, sizeof(char));
   strcpy(cmd, cmd_string);
   
   Command* c = (Command*) malloc(sizeof(Command));
   c->cmd_raw = cmd;
   c->token_count = 0;
-  c->status = -1;
+  c->status = 0;
   c->name = NULL;
   c->args = (char**) calloc(COMMAND_MAX_TOKENS + 1, sizeof(char**));
+  c->time = *t;
   
-  char* tok = strtok(cmd, COMMAND_DELIMITER);
+  char* tok = strtok(cmd_string, COMMAND_DELIMITER);
 
   while (tok != NULL) {
+    int tok_len = strlen(tok);
     int tok_index = c->token_count;
-    c->args[tok_index] = tok;
+
+    if (tok_len > 1 && *tok == '$' && tok_index != 0) {
+      char* var_val = get_var(tok, v);
+
+      if (var_val == NULL) {
+	c->status = -1;
+      } else {
+	tok = var_val;
+	tok_len = strlen(var_val);
+      }
+    }
+    
+    char* tok_cpy = (char*) calloc(tok_len + 1, sizeof(char));
+    strcpy(tok_cpy, tok);
+    
+    c->args[tok_index] = tok_cpy;
     c->token_count++;
     
     tok = strtok(NULL, COMMAND_DELIMITER);
   }
-
+  
   c->name = c->args[0];
-
   return c;
 }
 
@@ -93,7 +126,6 @@ int main(int argc, char** argv) {
       file_pos = file_buffer;
       fclose(f);
     }
-
   }
   
   theme = (Theme*) malloc(sizeof(Theme));
@@ -112,21 +144,16 @@ int main(int argc, char** argv) {
   }
   
   for (;;) {
-    Command* parsed_cmd = parse(cmd_buffer);
+    Command* parsed_cmd = parse(cmd_buffer, var_list);
+    char* cmd_name = parsed_cmd->name;
+    
     int status = 0;
-    struct tm * t;
-       
-    time_t cur_time;
-    time(&cur_time);
-    t = localtime(&cur_time);
-
-    parsed_cmd->time = *t;
     
     if (parsed_cmd->token_count > 0) {
-      char* cmd_name = parsed_cmd->name;
       
       if (!strcmp(cmd_name, "exit")) {
 	free(parsed_cmd->cmd_raw);
+	free(parsed_cmd->args[0]);
 	free(parsed_cmd->args);
 	free(parsed_cmd);
 	handle_exit(theme, var_list, clog, file_buffer);
@@ -146,10 +173,10 @@ int main(int argc, char** argv) {
       } else {
 	status = handle_external(parsed_cmd, theme);
       }
-    }
 
-    parsed_cmd->status = status;
-    insert_log(clog, parsed_cmd);
+      parsed_cmd->status = status;
+      insert_log(clog, parsed_cmd);
+    }
 
     clear_buffer(cmd_buffer);
     

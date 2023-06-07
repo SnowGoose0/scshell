@@ -4,6 +4,8 @@
 #include "types.h"
 #include "cshell.h"
 
+short check_env_var(char** c, EnvVar* v, Theme* t);
+
 void handle_exit(Theme* t, EnvVar* v, CommandLog* log, char* fb);
 
 int handle_log(Command* c, CommandLog* log, Theme* t);

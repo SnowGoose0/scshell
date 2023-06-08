@@ -3,6 +3,9 @@
 
 #include <time.h>
 
+#define COMMAND_SUCCESS                   0
+#define COMMAND_FAILURE                  -1
+
 typedef struct command {
   int token_count;
   int status;

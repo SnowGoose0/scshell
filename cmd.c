@@ -39,7 +39,7 @@ void handle_exit(Theme* t, EnvVar* v, CommandLog* log, char* fb) {
 
 int handle_log(Command* c, CommandLog* log, Theme* t) {
 
-  if (c->token_count > 1) return 1;
+  if (c->token_count > 1) return COMMAND_FAILURE;
   
   for (int i = 0; i < log->back; ++i) {
     Command* c = log->list[i];
@@ -58,7 +58,7 @@ int handle_log(Command* c, CommandLog* log, Theme* t) {
     printf(" %s%s %d%s\n", t->begin, command_name, status, t->end);
   }
 
-  return 0;
+  return COMMAND_SUCCESS;
 }
 
 short check_env_var(char** c, EnvVar* v, Theme* t) {
@@ -94,7 +94,7 @@ int handle_print(Command* c, EnvVar* v, Theme* t) {
 
   if (*content == 0) {
     printf("%serror: not enough arguments\n%s", t->begin, t->end);
-    return 1;
+    return COMMAND_SUCCESS;
   }
 
   if (!check_env_var(content, v, t)) return 1;
@@ -118,32 +118,32 @@ int handle_print(Command* c, EnvVar* v, Theme* t) {
   
   printf("\n");
 
-  return 0;
+  return COMMAND_SUCCESS;
 }
 
 int handle_theme(Command* c, Theme* t) {
   if (c->token_count != 2) {
     printf("%serror: invalid arguments\n%s", t->begin, t->end);
-    return 1;
+    return COMMAND_FAILURE;
   }
 
   char* color = c->args[1];
 
   if (!strcmp(color, "red")) {
     t->begin = COLOR_RED;
-    return 0;
+    return COMMAND_SUCCESS;
     
   } else if (!strcmp(color, "blue")) {
     t->begin = COLOR_BLU;
-    return 0;
+    return COMMAND_SUCCESS;
     
   } else if (!strcmp(color, "green")) {
     t->begin = COLOR_GRN;
-    return 0;
+    return COMMAND_SUCCESS;
   }
   
   printf("%sunsupported theme\n%s", t->begin, t->end);
-  return 1;
+  return COMMAND_FAILURE;
 }
 
 EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
@@ -157,6 +157,11 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
     return NULL;
   }
 
+  if (c->token_count > 1) {
+    printf("%sToo many arguments\n%s", t->begin, t->end);
+    return NULL;
+  }
+
   while (*val != '=') ++val;
   *val = 0;
   val++;
@@ -165,6 +170,8 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   char* val_copy = (char*) calloc(strlen(val) + 1, sizeof(char));
   strcpy(var_copy, var);
   strcpy(val_copy, val);
+
+  *(val - 1) = '=';
 
   while (v != NULL) {
     if (!strcmp(v->name, var_copy)) {
@@ -197,7 +204,7 @@ int handle_external(Command* c, Theme* t) {
   int c_status;
   char** exec_args;
 
-  if (pipe(pipef) == -1) return 1;
+  if (pipe(pipef) == -1) return COMMAND_FAILURE;
   pid_t pid = fork();
 
   exec_args = c->args;
@@ -242,5 +249,5 @@ int handle_external(Command* c, Theme* t) {
     free(read_buffer);
   }
 
-  return c_status - 255 > 0 ? 1 : 0;
+  return c_status - 255 > 0 ? COMMAND_FAILURE : COMMAND_SUCCESS;
 }

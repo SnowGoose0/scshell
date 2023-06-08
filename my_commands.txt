@@ -1,1 +1,24 @@
-a b c 
+print hello
+pwd
+
+    
+
+      
+print hello
+
+
+  
+    
+
+
+
+     
+      
+       
+
+        
+         
+
+
+          
+print what's up

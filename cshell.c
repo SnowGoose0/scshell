@@ -121,10 +121,14 @@ int main(int argc, char** argv) {
       int fs = ftell(f);
       fseek(f, 0, SEEK_SET);
 
-      file_buffer = (char*) calloc(fs + 1, sizeof(char));
-      fread(file_buffer, sizeof(char), fs, f);
-      file_pos = file_buffer;
-      fclose(f);
+      if (fs > 0) {
+        file_buffer = (char*) calloc(fs + 1, sizeof(char));
+        fread(file_buffer, sizeof(char), fs, f);
+        file_pos = file_buffer;
+        fclose(f);
+      } else {
+        mode = MODE_I;
+      }
     }
   }
   
@@ -136,9 +140,12 @@ int main(int argc, char** argv) {
 
   if (mode == MODE_S) {
     char* f_tok = strtok(file_buffer, FILE_DELIMITER);
-    strcpy(cmd_buffer, f_tok);
     
-  } else if (mode == MODE_I) {
+    if (f_tok != NULL) strcpy(cmd_buffer, f_tok);
+    else mode = MODE_I;
+  }
+
+  if (mode == MODE_I) {
     printf(PROMPT_PREFIX, COLOR_NON, COLOR_NON);
     fgets(cmd_buffer, sizeof(cmd_buffer), stdin);
   }
@@ -146,9 +153,8 @@ int main(int argc, char** argv) {
   for (;;) {
     Command* parsed_cmd = parse(cmd_buffer, var_list);
     char* cmd_name = parsed_cmd->name;
-    
-    int status = 0;
-    
+
+    int status = COMMAND_SUCCESS;    
     if (parsed_cmd->token_count > 0) {
       
       if (!strcmp(cmd_name, "exit")) {
@@ -168,7 +174,10 @@ int main(int argc, char** argv) {
 	status = handle_theme(parsed_cmd, theme);
 
       } else if (*cmd_name == ENV_VAR_PREFIX) {
-	var_list = handle_env_var(parsed_cmd, var_list, theme);
+	EnvVar* tmp_var_list = handle_env_var(parsed_cmd, var_list, theme);
+
+  if (tmp_var_list == NULL) status = COMMAND_FAILURE;
+  else var_list = tmp_var_list;
 
       } else {
 	status = handle_external(parsed_cmd, theme);

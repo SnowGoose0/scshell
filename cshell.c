@@ -158,12 +158,8 @@ int main(int argc, char** argv) {
     if (parsed_cmd->token_count > 0) {
       
       if (!strcmp(cmd_name, "exit")) {
-	free(parsed_cmd->cmd_raw);
-	free(parsed_cmd->args[0]);
-	free(parsed_cmd->args);
-	free(parsed_cmd);
-	handle_exit(theme, var_list, clog, file_buffer);
-
+	status = handle_exit(parsed_cmd, theme, var_list, clog, file_buffer);
+  
       } else if (!strcmp(cmd_name, "log")) {
 	status = handle_log(parsed_cmd, clog, theme);
        
@@ -171,7 +167,7 @@ int main(int argc, char** argv) {
         status = handle_print(parsed_cmd, var_list, theme);
 
       } else if (!strcmp(cmd_name, "theme")) {
-	status = handle_theme(parsed_cmd, theme);
+	status = handle_theme(parsed_cmd, var_list, theme);
 
       } else if (*cmd_name == ENV_VAR_PREFIX) {
 	EnvVar* tmp_var_list = handle_env_var(parsed_cmd, var_list, theme);
@@ -196,7 +192,7 @@ int main(int argc, char** argv) {
       if (f_tok != NULL) {
 	strcpy(cmd_buffer, f_tok);
       } else {
-	mode = MODE_I;
+	strcpy(cmd_buffer, "exit");
       }
     }
 

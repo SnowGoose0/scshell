@@ -18,7 +18,12 @@ char* const MONTHS_MAP[] = {
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-void handle_exit(Theme* t, EnvVar* v, CommandLog* log, char* fb) {
+int handle_exit(Command* c, Theme* t, EnvVar* v, CommandLog* log, char* fb) {
+  if (c->token_count > 1) {
+    printf("%sError: Too many arguments\n%s", t->begin, t->end);
+    return COMMAND_FAILURE;
+  }
+
   printf("%sBye!\n%s", t->begin, t->end);
 
   free(t);
@@ -33,13 +38,21 @@ void handle_exit(Theme* t, EnvVar* v, CommandLog* log, char* fb) {
     free(v);
     v = tmp;
   }
+
+  free(c->cmd_raw);
+  free(c->args[0]);
+  free(c->args);
+  free(c);
   
   exit(EXIT_SUCCESS);
 }
 
 int handle_log(Command* c, CommandLog* log, Theme* t) {
 
-  if (c->token_count > 1) return COMMAND_FAILURE;
+  if (c->token_count > 1) {
+    printf("%sError: Too many arguments\n%s", t->begin, t->end);
+    return COMMAND_FAILURE;
+  }
   
   for (int i = 0; i < log->back; ++i) {
     Command* c = log->list[i];
@@ -89,28 +102,17 @@ NOT_FOUND:
 }
 
 int handle_print(Command* c, EnvVar* v, Theme* t) {
-  short env_var_exist = 0;
   char** content = c->args + 1;
 
   if (*content == 0) {
-    printf("%serror: not enough arguments\n%s", t->begin, t->end);
-    return COMMAND_SUCCESS;
+    printf("%sError: not enough arguments\n%s", t->begin, t->end);
+    return COMMAND_FAILURE;
   }
 
-  if (!check_env_var(content, v, t)) return 1;
+  if (!check_env_var(content, v, t)) return COMMAND_FAILURE;
 
   while (*content != 0) {
-    char* print_item = *content;
-    EnvVar* tmp_v = v;
-
-    /*
-    if ((*content)[0] == '$') {
-      while (tmp_v) {
-	if (!strcmp(*content, tmp_v->name)) print_item = tmp_v->value;
-	tmp_v = tmp_v->next;
-      }
-      }*/
-      
+    char* print_item = *content;   
     printf("%s%s %s", t->begin, print_item, t->end);
     
     ++content;
@@ -121,11 +123,17 @@ int handle_print(Command* c, EnvVar* v, Theme* t) {
   return COMMAND_SUCCESS;
 }
 
-int handle_theme(Command* c, Theme* t) {
-  if (c->token_count != 2) {
-    printf("%serror: invalid arguments\n%s", t->begin, t->end);
+int handle_theme(Command* c, EnvVar* v, Theme* t) {
+
+  if (c->token_count > 2) {
+    printf("%sError: Too many arguments\n%s", t->begin, t->end);
     return COMMAND_FAILURE;
+  } else if (c->token_count == 1) {
+    goto BAD_THEME;
   }
+
+  char** content = c->args + 1;
+  if (!check_env_var(content, v, t)) return COMMAND_FAILURE;
 
   char* color = c->args[1];
 
@@ -142,6 +150,7 @@ int handle_theme(Command* c, Theme* t) {
     return COMMAND_SUCCESS;
   }
   
+BAD_THEME:
   printf("%sunsupported theme\n%s", t->begin, t->end);
   return COMMAND_FAILURE;
 }
@@ -158,13 +167,21 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   }
 
   if (c->token_count > 1) {
-    printf("%sToo many arguments\n%s", t->begin, t->end);
+    printf("%sError: Too many arguments\n%s", t->begin, t->end);
     return NULL;
   }
 
-  while (*val != '=') ++val;
+  while (*val != '=') {
+    if (*val == '/') return NULL;
+    ++val;
+  }
   *val = 0;
   val++;
+
+  if (*val == 0) {
+    printf("%sVariable value expected\n%s", t->begin, t->end);
+    return NULL;
+  }
 
   char* var_copy = (char*) calloc(strlen(var) + 1, sizeof(char));
   char* val_copy = (char*) calloc(strlen(val) + 1, sizeof(char));

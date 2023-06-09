@@ -1,5 +1,0 @@
-
-
-vector<vector<string>> sort_alphabetical(vector<vector<string>>& my_list) {
-
-}

@@ -15,5 +15,6 @@
 
 #define MODE_I                    0x0
 #define MODE_S                    0x1
+#define MODE_E                    0x2
 
 #endif

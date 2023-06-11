@@ -93,6 +93,7 @@ int main(int argc, char** argv) {
   Theme* theme;
   CommandLog* clog;
   char cmd_buffer[COMMAND_MAX_TOKENS];
+  clear_buffer(cmd_buffer);
 
   switch (argc) {
   case 2:
@@ -127,7 +128,8 @@ int main(int argc, char** argv) {
         file_pos = file_buffer;
         fclose(f);
       } else {
-        mode = MODE_I;
+        strcpy(cmd_buffer, "exit");
+        mode = MODE_E;
       }
     }
   }
@@ -142,7 +144,9 @@ int main(int argc, char** argv) {
     char* f_tok = strtok(file_buffer, FILE_DELIMITER);
     
     if (f_tok != NULL) strcpy(cmd_buffer, f_tok);
-    else mode = MODE_I;
+    else {
+      strcpy(cmd_buffer, "exit");
+    }
   }
 
   if (mode == MODE_I) {

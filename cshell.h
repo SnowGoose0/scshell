@@ -9,7 +9,7 @@
 #define PROMPT_PREFIX             "%scshell$ %s"
 #define FILE_DELIMITER            "\n"
 #define COMMAND_DELIMITER         " \n\t\r"
-#define COMMAND_MAX_TOKENS        1000
+#define COMMAND_MAX_TOKENS        4096
 
 #define ENV_VAR_PREFIX            '$'
 

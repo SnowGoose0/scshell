@@ -19,10 +19,11 @@ char* const MONTHS_MAP[] = {
 };
 
 int handle_exit(Command* c, Theme* t, EnvVar* v, CommandLog* log, char* fb) {
+  /*
   if (c->token_count > 1) {
     printf("%sError: Too many arguments\n%s", t->begin, t->end);
     return COMMAND_FAILURE;
-  }
+  } */
 
   printf("%sBye!\n%s", t->begin, t->end);
 

@@ -2,7 +2,7 @@
 #define CLOG
 
 #include "types.h"
-#define DEFAULT_LOG_SIZE 25
+#define DEFAULT_LOG_SIZE 10
 
 CommandLog* create_log();
 

@@ -15,7 +15,7 @@ CommandLog* create_log() {
 void insert_log(CommandLog* log, Command* c) {
   if (log->back == log->list_size) {
     int new_size = DEFAULT_LOG_SIZE + log->list_size;
-    log->list = (Command**) realloc(log->list, new_size);
+    log->list = (Command**) realloc(log->list, new_size * sizeof(Command*));
     log->list_size = new_size;
   }
   

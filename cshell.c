@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <time.h>
 
 #include "cmd.h"
@@ -45,6 +46,8 @@ Command* parse(char* cmd_string, EnvVar* v) {
     int tok_index = c->token_count;
 
     if (tok_len > 1 && *tok == '$' && tok_index != 0) {
+      for (int i = 0; i < tok_len; ++i) tok[i] = tolower(tok[i]);
+      
       char* var_val = get_var(tok, v);
 
       if (var_val == NULL) {

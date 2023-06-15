@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "cmd.h"
 #include "clog.h"
@@ -159,6 +160,7 @@ BAD_THEME:
 EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   char* var = c->name;
   char* val = c->name;
+  int valid_var_name = 1;
   EnvVar* head = v;
   EnvVar* prev = NULL;
   
@@ -173,9 +175,17 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   }
 
   while (*val != '=') {
-    if (*val == '/') return NULL;
+    if (*val != '$' && *val != '_' && !isalnum(*val)) valid_var_name = 0;
+    *val = tolower(*val);
     ++val;
   }
+
+  if (!valid_var_name) {
+    printf("%sInvalid character in variable name\n%s", t->begin, t->end);
+    return NULL;
+  }
+
+  
   *val = 0;
   val++;
 

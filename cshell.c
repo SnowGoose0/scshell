@@ -188,6 +188,12 @@ int main(int argc, char** argv) {
 
       parsed_cmd->status = status;
       insert_log(clog, parsed_cmd);
+      
+    } else {
+      free(parsed_cmd->cmd_raw);
+      free(parsed_cmd->args[0]);
+      free(parsed_cmd->args);
+      free(parsed_cmd);
     }
 
     clear_buffer(cmd_buffer);

@@ -181,7 +181,6 @@ EnvVar* handle_env_var(Command* c, EnvVar* v, Theme* t) {
   }
 
   if (!valid_var_name) {
-    printf("%sInvalid character in variable name\n%s", t->begin, t->end);
     return NULL;
   }
 
